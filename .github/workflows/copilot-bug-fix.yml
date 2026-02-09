@@ -58,7 +58,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: staging
+          ref: version-15 ###
           fetch-depth: 0
       
       - name: Extract issue details
@@ -195,7 +195,6 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
           echo "✅ Fix generated and structured outputs saved"
-      # ================================================================
       
       - name: Upload fix artifact
         if: steps.generate_fix.outputs.fix_generated == 'true'
