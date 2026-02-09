@@ -58,7 +58,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: version-15 ###
+          ref: version-15 ######
           fetch-depth: 0
       
       - name: Extract issue details
@@ -240,7 +240,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: staging
+          ref: version-15 #######
           fetch-depth: 0
       
       - name: Download fix artifact
