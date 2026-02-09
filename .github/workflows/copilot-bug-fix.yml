@@ -57,7 +57,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: staging
+          ref: version-15 ###only for fork
           fetch-depth: 0
       
       - name: Extract issue details
