@@ -4,6 +4,11 @@ on:
   issues:
     types: [labeled, opened]
 
+# Prevent duplicate workflow runs for the same issue
+concurrency:
+  group: copilot-bugfix-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 permissions:
   issues: write
   pull-requests: write
@@ -85,9 +90,11 @@ jobs:
       
       - name: Validate issue format
         id: validate_issue
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           # Check if issue has substantial description
-          BODY_LENGTH=$(echo "${{ steps.extract_issue.outputs.issue_body }}" | wc -c)
+          BODY_LENGTH=$(printf '%s' "$ISSUE_BODY" | wc -c)
           
           if [ $BODY_LENGTH -lt 50 ]; then
             echo "⚠️  Issue description is too vague or empty."
@@ -374,10 +381,10 @@ jobs:
             ### ⚠️ Important Notes
             This is an **AI-generated fix**. Human review is mandatory before merging.
             
-            If the fix doesn’t look right:
+            If the fix doesn't look right:
             1. Add a comment explaining what needs to change
             2. Adjust or regenerate the fix
-            3. Close the PR if it’s out of scope
+            3. Close the PR if it's out of scope
           branch: ${{ needs.analyze-bug.outputs.pr_branch }}
           delete-branch: true
           reviewers: ${{ github.event.issue.user.login }}
@@ -392,7 +399,6 @@ jobs:
           script: |
             const prNumber = '${{ steps.create_pr.outputs.pull-request-number }}';
             const prUrl = '${{ steps.create_pr.outputs.pull-request-url }}';
-            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
