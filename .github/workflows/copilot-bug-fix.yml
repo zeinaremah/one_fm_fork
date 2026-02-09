@@ -58,7 +58,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: version-15 ######
+          ref: version-15
           fetch-depth: 0
       
       - name: Extract issue details
@@ -91,11 +91,13 @@ jobs:
       
       - name: Validate issue format
         id: validate_issue
+        env:
+          GITHUB_EVENT: ${{ toJson(github.event) }}
         run: |
           # Check if issue has substantial description
-          BODY_LENGTH=$(echo "${{ steps.extract_issue.outputs.issue_body }}" | wc -c)
+          BODY_LENGTH=$(echo "$GITHUB_EVENT" | jq '.issue.body | length')
           
-          if [ $BODY_LENGTH -lt 50 ]; then
+          if [ "$BODY_LENGTH" -lt 50 ]; then
             echo "⚠️  Issue description is too vague or empty."
             echo "fix_generated=false" >> $GITHUB_OUTPUT
             exit 0
@@ -142,8 +144,6 @@ jobs:
             --arg skills "$SKILLS_CONTENT" \
             '{
               model: "copilot-bug-fix-v15",
-              # CHANGE: Extract values from JSON object using jq selectors
-              # .issue.number converts to string, .issue.title and .issue.body are safe
               prompt: ("You are a Frappe/ERPNext v15 bug-fixing specialist.\n\nSkills:\n" + $skills + "\n\nIssue #" + (.issue.number | tostring) + ": " + .issue.title + "\n\nDescription:\n" + .issue.body + "\n\nRespond with:\n1. Root Cause Analysis:\n2. Files Affected:\n3. Code Changes:\n4. Tests:\n5. Verification:"),
               max_tokens: 1500
             }'
@@ -240,7 +240,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: version-15 #######
+          ref: version-15
           fetch-depth: 0
       
       - name: Download fix artifact
