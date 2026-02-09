@@ -2,12 +2,13 @@ name: Copilot Bug Fix Workflow
 
 on:
   issues:
-    types: [labeled, opened]
+    types: [labeled]
 
-# Prevent duplicate workflow runs for the same issue
+
 concurrency:
   group: copilot-bugfix-${{ github.event.issue.number }}
   cancel-in-progress: true
+
 
 permissions:
   issues: write
@@ -57,7 +58,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: version-15 ###only for fork
+          ref: version-15 ###
           fetch-depth: 0
       
       - name: Extract issue details
@@ -90,11 +91,9 @@ jobs:
       
       - name: Validate issue format
         id: validate_issue
-        env:
-          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           # Check if issue has substantial description
-          BODY_LENGTH=$(printf '%s' "$ISSUE_BODY" | wc -c)
+          BODY_LENGTH=$(echo "${{ steps.extract_issue.outputs.issue_body }}" | wc -c)
           
           if [ $BODY_LENGTH -lt 50 ]; then
             echo "⚠️  Issue description is too vague or empty."
@@ -127,29 +126,25 @@ jobs:
           BRANCH_NAME="fix/issue-${{ github.event.issue.number }}"
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
           echo "🔀 Will create branch: ${BRANCH_NAME}"
-      
+    
       - name: Call Copilot API for fix generation
         id: generate_fix
         if: steps.validate_issue.outputs.fix_generated == 'true'
         env:
           COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}
+          GITHUB_EVENT: ${{ toJson(github.event) }}
         run: |
           set -euo pipefail
 
-          ISSUE_TITLE="${{ github.event.issue.title }}"
-          ISSUE_NUMBER="${{ github.event.issue.number }}"
-          ISSUE_BODY="${{ github.event.issue.body }}"
           SKILLS_CONTENT=$(cat /tmp/skills.md)
 
-          # Build payload
-          PAYLOAD=$(jq -n \
-            --arg title "$ISSUE_TITLE" \
-            --arg number "$ISSUE_NUMBER" \
-            --arg body "$ISSUE_BODY" \
+          PAYLOAD=$(echo "$GITHUB_EVENT" | jq \
             --arg skills "$SKILLS_CONTENT" \
             '{
               model: "copilot-bug-fix-v15",
-              prompt: ("You are a Frappe/ERPNext v15 bug-fixing specialist.\n\nSkills:\n" + $skills + "\n\nIssue #" + $number + ": " + $title + "\n\nDescription:\n" + $body + "\n\nRespond with:\n1. Root Cause Analysis:\n2. Files Affected:\n3. Code Changes:\n4. Tests:\n5. Verification:"),
+              # CHANGE: Extract values from JSON object using jq selectors
+              # .issue.number converts to string, .issue.title and .issue.body are safe
+              prompt: ("You are a Frappe/ERPNext v15 bug-fixing specialist.\n\nSkills:\n" + $skills + "\n\nIssue #" + (.issue.number | tostring) + ": " + .issue.title + "\n\nDescription:\n" + .issue.body + "\n\nRespond with:\n1. Root Cause Analysis:\n2. Files Affected:\n3. Code Changes:\n4. Tests:\n5. Verification:"),
               max_tokens: 1500
             }'
           )
@@ -399,6 +394,7 @@ jobs:
           script: |
             const prNumber = '${{ steps.create_pr.outputs.pull-request-number }}';
             const prUrl = '${{ steps.create_pr.outputs.pull-request-url }}';
+            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
