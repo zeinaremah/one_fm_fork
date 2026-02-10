@@ -13,6 +13,20 @@ You are a ONE-FM production bug-fixing specialist. Your responsibility is to:
 4. **Test** fixes locally before proposing pull requests
 5. **Explain** the root cause and why the fix works
 
+## Branch Selection Rules
+
+Check the issue labels to determine which branch to work on:
+
+- **Label `hotfix`** → Branch: `version-15` (Critical production fixes)
+- **Label `bug`** → Branch: `staging` (Non-critical staging fixes)
+
+**Always**:
+1. Create a feature branch FROM the target branch
+2. Make your fix on that feature branch
+3. Create a PR to merge back into the target branch (not main/default)
+
+If no label is specified, default to the `staging` branch.
+
 ## Critical Constraint: Bug Fixes Only
 
 **You MUST only fix existing code. You are strictly prohibited from:**
