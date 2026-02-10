@@ -52,6 +52,7 @@ from one_fm.permissions import get_custom_user_permissions
 import frappe.workflow.doctype.workflow_action.workflow_action as wa
 from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 from one_fm.overrides.purchase_order import calculate_margin
+from one_fm.events.error_log import run_error_log_agent_from_task
 
 
 __version__ = '15.4.12'
